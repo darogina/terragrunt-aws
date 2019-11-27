@@ -15,7 +15,7 @@ function usage {
     echo "  Script for initializing a basic AWS account structure:"
     echo "  - An organisation will be configured"
     echo "  - Management, Production and Staging sub-accounts will be created"
-    echo "  - Various groups, including administrators, developers, finance, terragrunt and users will be created"
+    echo "  - Various groups, including administrators, developers, finance, terraform and users will be created"
     echo "  - An IAM user will be created in the Master organisation with the necessary permissions to run terragrunt"
     echo "  - An IAM administrator user will be created"
     echo "  *** MUST BE INITIALLY RUN WITH CREDENTIALS FOR A SPECIALLY-PROVISIONED USER IN THE MASTER ACCOUNT ***"
@@ -82,11 +82,11 @@ if [ -z "$DEV_MODE" ]; then
 fi
 
 if [[ -z "${ACCESS_KEY}" ]]; then
-    echo "Please provide the terragrunt.init user's access key with -a <access key>" 1>&2
+    echo "Please provide the terraform.init user's access key with -a <access key>" 1>&2
     VALIDATION_ERROR=1
 fi
 if [[ -z "${SECRET_KEY}" ]]; then
-    echo "Please provide the terragrunt.init user's secret key with -s <secret key>" 1>&2
+    echo "Please provide the terraform.init user's secret key with -s <secret key>" 1>&2
     VALIDATION_ERROR=1
 fi
 if [[ -z "${KEYBASE_PROFILE}" ]]; then
@@ -175,24 +175,24 @@ terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
 STAGING_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
 popd
 
-echo -e "\n=== CREATING terragrunt GROUP ===\n"
-pushd ./iam/groups/terragrunt
+echo -e "\n=== CREATING terraform GROUP ===\n"
+pushd ./iam/groups/terraform
 if [[ -n "${TG_SOURCE}" ]]; then
-    TG_SOURCE_MODULE="${TG_SOURCE}//iam/groups/terragrunt"
+    TG_SOURCE_MODULE="${TG_SOURCE}//iam/groups/terraform"
 fi
 terragrunt init ${TG_SOURCE_MODULE}
 terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
 popd
 
-echo -e "\n=== CREATING terragrunt.gitlab USER ===\n"
-pushd ./iam/users/terragrunt-ci
+echo -e "\n=== CREATING terraform.ci USER ===\n"
+pushd ./iam/users/terraform-ci
 if [[ -n "${TG_SOURCE}" ]]; then
-    TG_SOURCE_MODULE="${TG_SOURCE}//iam/users/terragrunt"
+    TG_SOURCE_MODULE="${TG_SOURCE}//iam/users/terraform"
 fi
 terragrunt init ${TG_SOURCE_MODULE}
 terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE} -var keybase=${KEYBASE_PROFILE}
-TERRAGRUNT_GITLAB_ACCESS_KEY=$(terragrunt output ${TG_SOURCE_MODULE} terragrunt_user_access_key)
-TERRAGRUNT_GITLAB_SECRET_KEY=$(terragrunt output ${TG_SOURCE_MODULE} terragrunt_user_secret_key | base64 --decode | keybase pgp decrypt)
+TERRAFORM_CI_ACCESS_KEY=$(terragrunt output ${TG_SOURCE_MODULE} terraform_user_access_key)
+TERRAFORM_CI_SECRET_KEY=$(terragrunt output ${TG_SOURCE_MODULE} terraform_user_secret_key | base64 --decode | keybase pgp decrypt)
 popd
 
 echo -e "\n=== CREATING users GROUP ===\n"
@@ -231,7 +231,7 @@ popd
 echo -e "\n=== CREATING ADMINISTRATOR USER ===\n"
 pushd ./iam/users/administrator
 if [[ -n "${TG_SOURCE}" ]]; then
-    TG_SOURCE_MODULE="${TG_SOURCE}//iam/users/administrator-with-terragrunt"
+    TG_SOURCE_MODULE="${TG_SOURCE}//iam/users/administrator-with-terraform"
 fi
 terragrunt init ${TG_SOURCE_MODULE}
 terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE} -var keybase=${KEYBASE_PROFILE}
@@ -244,26 +244,26 @@ popd
 export_admin_keys
 
 if [ "$DEV_MODE" -eq 0 ]; then
-    echo -e "\n=== DELETING terragrunt.init IAM USER ===\n"
-    pushd ./first-run/delete-terragrunt-init
+    echo -e "\n=== DELETING terraform.init IAM USER ===\n"
+    pushd ./first-run/delete-terraform-init
     if [[ -n "${TG_SOURCE}" ]]; then
         TG_SOURCE_MODULE="${TG_SOURCE}//utility/iam/import-unmanaged-iam-user"
     fi
     terragrunt init ${TG_SOURCE_MODULE}
-    terragrunt import ${TG_SOURCE_MODULE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerragruntAdministratorAccessRole" aws_iam_user.user terragrunt.init
+    terragrunt import ${TG_SOURCE_MODULE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole" aws_iam_user.user terraform.init
 
     # Well, this was super annoying... "terraform import" doesn't pick up force_destroy preventing the user being deleted due to unmanaged access keys
     # https://github.com/terraform-providers/terraform-provider-aws/issues/7859
     #
     # Running apply makes terraform see that the force_destroy flag is set for the user, and updates accordingly
-    terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerragruntAdministratorAccessRole"
+    terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole"
 
-    terragrunt destroy ${TG_SOURCE_MODULE} ${AUTO_APPROVE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerragruntAdministratorAccessRole"
+    terragrunt destroy ${TG_SOURCE_MODULE} ${AUTO_APPROVE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole"
     popd
 fi
 
 echo -e "\n=== COMPLETING ENVIRONMENT DEPLOYMENT===\n"
-terragrunt apply-all --terragrunt-exclude-dir "first-run/*" --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerragruntAdministratorAccessRole" ${TG_SOURCE}
+terragrunt apply-all --terragrunt-exclude-dir "first-run/*" --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole" ${TG_SOURCE}
 
 
 echo -e "\n=== INITIALISATION COMPLETE ==="
@@ -272,9 +272,9 @@ echo "----------------------------------------------------------------"
 echo "Role Switch Links"
 echo "Master Administrator             :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterAdministratorAccessRole&displayName=Master%20-%20Administrator"
 echo "Master Billing                   :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterBillingAccessRole&displayName=Master%20-%20Billing"
-echo "Master Terragrunt Administrator  :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerragruntAdministratorAccessRole&displayName=Master%20-%20Terragrunt%20Administrator"
-echo "Master Terragrunt Data Admin     :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerragruntDataAdministratorAccessRole&displayName=Master%20-%20Terragrunt%20Data%20Admin"
-echo "Master Terragrunt Data Read      :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerragruntDataReaderAccessRole&displayName=Master%20-%20Terragrunt%20Data%20Read"
+echo "Master Terraform Administrator  :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerraformAdministratorAccessRole&displayName=Master%20-%20Terraform%20Administrator"
+echo "Master Terraform Data Admin     :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerraformDataAdministratorAccessRole&displayName=Master%20-%20Terraform%20Data%20Admin"
+echo "Master Terraform Data Read      :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerraformDataReaderAccessRole&displayName=Master%20-%20Terraform%20Data%20Read"
 echo "Management Administrator         :  https://signin.aws.amazon.com/switchrole?account=${MANAGEMENT_ID}&roleName=ManagementAdministratorAccessRole&displayName=Management%20-%20Administrator"
 echo "Production Administrator         :  https://signin.aws.amazon.com/switchrole?account=${PRODUCTION_ID}&roleName=ProductionAdministratorAccessRole&displayName=Production%20-%20Administrator"
 echo "Staging Administrator            :  https://signin.aws.amazon.com/switchrole?account=${STAGING_ID}&roleName=StagingAdministratorAccessRole&displayName=Staging%20-%20Administrator"
@@ -285,5 +285,5 @@ echo "Administrator password           : " $ADMIN_PASSWORD
 echo "Administrator access key         : " $ADMIN_ACCESS_KEY
 echo "Administrator secret key         : " $ADMIN_SECRET_KEY
 echo "----------------------------------------------------------------"
-echo "terragrunt.ci access key         : " $TERRAGRUNT_GITLAB_ACCESS_KEY
-echo "terragrunt.ci secret key         : " $TERRAGRUNT_GITLAB_SECRET_KEY
+echo "terraform.ci access key     : " $TERRAFORM_CI_ACCESS_KEY
+echo "terraform.ci secret key     : " $TERRAFORM_CI_SECRET_KEY
