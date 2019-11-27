@@ -13,10 +13,10 @@ DEFAULT_REGION='eu-west-2'
 function usage {
     echo "DESCRIPTION:"
     echo "  Script for initializing a basic AWS account structure:"
-    echo "  - An organisation will be configured"
+    echo "  - An organization will be configured"
     echo "  - Management, Production and Staging sub-accounts will be created"
     echo "  - Various groups, including administrators, developers, finance, terraform and users will be created"
-    echo "  - An IAM user will be created in the Master organisation with the necessary permissions to run terragrunt"
+    echo "  - An IAM user will be created in the Master organization with the necessary permissions to run terragrunt"
     echo "  - An IAM administrator user will be created"
     echo "  *** MUST BE INITIALLY RUN WITH CREDENTIALS FOR A SPECIALLY-PROVISIONED USER IN THE MASTER ACCOUNT ***"
     echo ""
@@ -130,17 +130,17 @@ function popd () {
 }
 
 export_master_keys
-echo -e "\n=== CREATING ORGANISATION ===\n"
-pushd ./first-run/convert-to-organisation
+echo -e "\n=== CREATING ORGANIZATION ===\n"
+pushd ./first-run/convert-to-organization
 if [[ -n "${TG_SOURCE}" ]]; then
-    TG_SOURCE_MODULE="${TG_SOURCE}//utility/organisation/convert-to-organisation"
+    TG_SOURCE_MODULE="${TG_SOURCE}//utility/organization/convert-to-organization"
 fi
 terragrunt init ${TG_SOURCE_MODULE}
 terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
 popd
-pushd ./organisation
+pushd ./organization
 if [[ -n "${TG_SOURCE}" ]]; then
-    TG_SOURCE_MODULE="${TG_SOURCE}//organisation"
+    TG_SOURCE_MODULE="${TG_SOURCE}//organization"
 fi
 terragrunt init ${TG_SOURCE_MODULE}
 terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
