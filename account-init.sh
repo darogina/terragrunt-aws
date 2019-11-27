@@ -147,33 +147,33 @@ terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
 ACCOUNT_ID=$(terragrunt output ${TG_SOURCE_MODULE} master_account_id)
 popd
 
-echo -e "\n=== CREATING MANAGEMENT ACCOUNT ===\n"
-pushd ./accounts/management
-if [[ -n "${TG_SOURCE}" ]]; then
-    TG_SOURCE_MODULE="${TG_SOURCE}//account"
-fi
-terragrunt init ${TG_SOURCE_MODULE}
-terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
-MANAGEMENT_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
-popd
-echo -e "\n=== CREATING PRODUCTION ACCOUNT ===\n"
-pushd ./accounts/production
-if [[ -n "${TG_SOURCE}" ]]; then
-    TG_SOURCE_MODULE="${TG_SOURCE}//account"
-fi
-terragrunt init ${TG_SOURCE_MODULE}
-terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
-PRODUCTION_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
-popd
-echo -e "\n=== CREATING STAGING ACCOUNT ===\n"
-pushd ./accounts/staging
-if [[ -n "${TG_SOURCE}" ]]; then
-    TG_SOURCE_MODULE="${TG_SOURCE}//account"
-fi
-terragrunt init ${TG_SOURCE_MODULE}
-terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
-STAGING_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
-popd
+# echo -e "\n=== CREATING MANAGEMENT ACCOUNT ===\n"
+# pushd ./accounts/management
+# if [[ -n "${TG_SOURCE}" ]]; then
+#     TG_SOURCE_MODULE="${TG_SOURCE}//account"
+# fi
+# terragrunt init ${TG_SOURCE_MODULE}
+# terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
+# MANAGEMENT_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
+# popd
+# echo -e "\n=== CREATING PRODUCTION ACCOUNT ===\n"
+# pushd ./accounts/production
+# if [[ -n "${TG_SOURCE}" ]]; then
+#     TG_SOURCE_MODULE="${TG_SOURCE}//account"
+# fi
+# terragrunt init ${TG_SOURCE_MODULE}
+# terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
+# PRODUCTION_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
+# popd
+# echo -e "\n=== CREATING STAGING ACCOUNT ===\n"
+# pushd ./accounts/staging
+# if [[ -n "${TG_SOURCE}" ]]; then
+#     TG_SOURCE_MODULE="${TG_SOURCE}//account"
+# fi
+# terragrunt init ${TG_SOURCE_MODULE}
+# terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
+# STAGING_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
+# popd
 
 echo -e "\n=== CREATING terraform GROUP ===\n"
 pushd ./iam/groups/terraform
@@ -275,10 +275,10 @@ echo "Master Billing                   :  https://signin.aws.amazon.com/switchro
 echo "Master Terraform Administrator  :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerraformAdministratorAccessRole&displayName=Master%20-%20Terraform%20Administrator"
 echo "Master Terraform Data Admin     :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerraformDataAdministratorAccessRole&displayName=Master%20-%20Terraform%20Data%20Admin"
 echo "Master Terraform Data Read      :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerraformDataReaderAccessRole&displayName=Master%20-%20Terraform%20Data%20Read"
-echo "Management Administrator         :  https://signin.aws.amazon.com/switchrole?account=${MANAGEMENT_ID}&roleName=ManagementAdministratorAccessRole&displayName=Management%20-%20Administrator"
-echo "Production Administrator         :  https://signin.aws.amazon.com/switchrole?account=${PRODUCTION_ID}&roleName=ProductionAdministratorAccessRole&displayName=Production%20-%20Administrator"
-echo "Staging Administrator            :  https://signin.aws.amazon.com/switchrole?account=${STAGING_ID}&roleName=StagingAdministratorAccessRole&displayName=Staging%20-%20Administrator"
-echo "Staging Power User               :  https://signin.aws.amazon.com/switchrole?account=${STAGING_ID}&roleName=StagingPowerUserAccessRole&displayName=Staging%20-%20Power%20User"
+# echo "Management Administrator         :  https://signin.aws.amazon.com/switchrole?account=${MANAGEMENT_ID}&roleName=ManagementAdministratorAccessRole&displayName=Management%20-%20Administrator"
+# echo "Production Administrator         :  https://signin.aws.amazon.com/switchrole?account=${PRODUCTION_ID}&roleName=ProductionAdministratorAccessRole&displayName=Production%20-%20Administrator"
+# echo "Staging Administrator            :  https://signin.aws.amazon.com/switchrole?account=${STAGING_ID}&roleName=StagingAdministratorAccessRole&displayName=Staging%20-%20Administrator"
+# echo "Staging Power User               :  https://signin.aws.amazon.com/switchrole?account=${STAGING_ID}&roleName=StagingPowerUserAccessRole&displayName=Staging%20-%20Power%20User"
 echo "----------------------------------------------------------------"
 echo "Administrator username           : " $ADMIN_USERNAME
 echo "Administrator password           : " $ADMIN_PASSWORD
