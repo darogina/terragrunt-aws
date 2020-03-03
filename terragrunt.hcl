@@ -1,9 +1,9 @@
 locals {
-  aws_region              = "eu-west-2"
+  aws_region              = "us-east-1"
   billing_alarm_currency  = "USD"
   billing_alarm_threshold = "5"
-  domain                  = "domain.com"
-  keybase                 = "keybase-username"
+  domain                  = "thenumber.com"
+  keybase                 = "drogina"
 
   # Don't edit below
   default_yaml_path = "empty.yaml"
@@ -26,7 +26,7 @@ remote_state {
 # This shouldn't need to be edited
 inputs = merge(
   {
-    admin_email                  = "aws.administrator@${local.domain}"
+    admin_email                  = "david@${local.domain}"
     audit_logs_bucket_name       = "logging.${local.domain}"
     aws_region                   = local.aws_region
     billing_alarm_currency       = local.billing_alarm_currency

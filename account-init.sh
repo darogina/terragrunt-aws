@@ -14,7 +14,7 @@ function usage {
     echo "DESCRIPTION:"
     echo "  Script for initializing a basic AWS account structure:"
     echo "  - An organization will be configured"
-    echo "  - Management, Production and Staging sub-accounts will be created"
+    echo "  - Management, Production, Data and Dev sub-accounts will be created"
     echo "  - Various groups, including administrators, developers, finance, terraform and users will be created"
     echo "  - An IAM user will be created in the Master organization with the necessary permissions to run terragrunt"
     echo "  - An IAM administrator user will be created"
@@ -81,14 +81,14 @@ if [ -z "$DEV_MODE" ]; then
     AUTO_APPROVE="-auto-approve"
 fi
 
-if [[ -z "${ACCESS_KEY}" ]]; then
-    echo "Please provide the terraform.init user's access key with -a <access key>" 1>&2
-    VALIDATION_ERROR=1
-fi
-if [[ -z "${SECRET_KEY}" ]]; then
-    echo "Please provide the terraform.init user's secret key with -s <secret key>" 1>&2
-    VALIDATION_ERROR=1
-fi
+# if [[ -z "${ACCESS_KEY}" ]]; then
+#     echo "Please provide the terraform.init user's access key with -a <access key>" 1>&2
+#     VALIDATION_ERROR=1
+# fi
+# if [[ -z "${SECRET_KEY}" ]]; then
+#     echo "Please provide the terraform.init user's secret key with -s <secret key>" 1>&2
+#     VALIDATION_ERROR=1
+# fi
 if [[ -z "${KEYBASE_PROFILE}" ]]; then
     echo "Please provide the keybase username as -k <keybase profile> " 1>&2
     VALIDATION_ERROR=1
@@ -129,7 +129,7 @@ function popd () {
     command popd "$@" > /dev/null
 }
 
-export_master_keys
+# export_master_keys
 echo -e "\n=== CREATING ORGANIZATION ===\n"
 pushd ./first-run/convert-to-organization
 if [[ -n "${TG_SOURCE}" ]]; then
@@ -165,15 +165,25 @@ popd
 # terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
 # PRODUCTION_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
 # popd
-# echo -e "\n=== CREATING STAGING ACCOUNT ===\n"
-# pushd ./accounts/staging
-# if [[ -n "${TG_SOURCE}" ]]; then
-#     TG_SOURCE_MODULE="${TG_SOURCE}//account"
-# fi
-# terragrunt init ${TG_SOURCE_MODULE}
-# terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
-# STAGING_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
-# popd
+echo -e "\n=== CREATING DEV ACCOUNT ===\n"
+pushd ./accounts/dev
+if [[ -n "${TG_SOURCE}" ]]; then
+    TG_SOURCE_MODULE="${TG_SOURCE}//account"
+fi
+terragrunt init ${TG_SOURCE_MODULE}
+terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
+DEV_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
+popd
+
+echo -e "\n=== CREATING DATA ACCOUNT ===\n"
+pushd ./accounts/data
+if [[ -n "${TG_SOURCE}" ]]; then
+    TG_SOURCE_MODULE="${TG_SOURCE}//account"
+fi
+terragrunt init ${TG_SOURCE_MODULE}
+terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE}
+DATA_ID=$(terragrunt output ${TG_SOURCE_MODULE} account_id)
+popd
 
 echo -e "\n=== CREATING terraform GROUP ===\n"
 pushd ./iam/groups/terraform
@@ -243,27 +253,27 @@ popd
 
 export_admin_keys
 
-if [ "$DEV_MODE" -eq 0 ]; then
-    echo -e "\n=== DELETING terraform.init IAM USER ===\n"
-    pushd ./first-run/delete-terraform-init
-    if [[ -n "${TG_SOURCE}" ]]; then
-        TG_SOURCE_MODULE="${TG_SOURCE}//utility/iam/import-unmanaged-iam-user"
-    fi
-    terragrunt init ${TG_SOURCE_MODULE}
-    terragrunt import ${TG_SOURCE_MODULE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole" aws_iam_user.user terraform.init
+# if [ "$DEV_MODE" -eq 0 ]; then
+#     echo -e "\n=== DELETING terraform.init IAM USER ===\n"
+#     pushd ./first-run/delete-terraform-init
+#     if [[ -n "${TG_SOURCE}" ]]; then
+#         TG_SOURCE_MODULE="${TG_SOURCE}//utility/iam/import-unmanaged-iam-user"
+#     fi
+#     terragrunt init ${TG_SOURCE_MODULE}
+#     terragrunt import ${TG_SOURCE_MODULE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole" aws_iam_user.user terraform.init
 
-    # Well, this was super annoying... "terraform import" doesn't pick up force_destroy preventing the user being deleted due to unmanaged access keys
-    # https://github.com/terraform-providers/terraform-provider-aws/issues/7859
-    #
-    # Running apply makes terraform see that the force_destroy flag is set for the user, and updates accordingly
-    terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole"
+#     # Well, this was super annoying... "terraform import" doesn't pick up force_destroy preventing the user being deleted due to unmanaged access keys
+#     # https://github.com/terraform-providers/terraform-provider-aws/issues/7859
+#     #
+#     # Running apply makes terraform see that the force_destroy flag is set for the user, and updates accordingly
+#     terragrunt apply ${TG_SOURCE_MODULE} ${AUTO_APPROVE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole"
 
-    terragrunt destroy ${TG_SOURCE_MODULE} ${AUTO_APPROVE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole"
-    popd
-fi
+#     terragrunt destroy ${TG_SOURCE_MODULE} ${AUTO_APPROVE} --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole"
+#     popd
+# fi
 
 echo -e "\n=== COMPLETING ENVIRONMENT DEPLOYMENT===\n"
-terragrunt apply-all --terragrunt-exclude-dir "first-run/*" --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole" ${TG_SOURCE}
+# terragrunt apply-all --terragrunt-exclude-dir "first-run/*" --terragrunt-iam-role "arn:aws:iam::${ACCOUNT_ID}:role/MasterTerraformAdministratorAccessRole" ${TG_SOURCE}
 
 
 echo -e "\n=== INITIALISATION COMPLETE ==="
@@ -275,10 +285,10 @@ echo "Master Billing                   :  https://signin.aws.amazon.com/switchro
 echo "Master Terraform Administrator  :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerraformAdministratorAccessRole&displayName=Master%20-%20Terraform%20Administrator"
 echo "Master Terraform Data Admin     :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerraformDataAdministratorAccessRole&displayName=Master%20-%20Terraform%20Data%20Admin"
 echo "Master Terraform Data Read      :  https://signin.aws.amazon.com/switchrole?account=${ACCOUNT_ID}&roleName=MasterTerraformDataReaderAccessRole&displayName=Master%20-%20Terraform%20Data%20Read"
-# echo "Management Administrator         :  https://signin.aws.amazon.com/switchrole?account=${MANAGEMENT_ID}&roleName=ManagementAdministratorAccessRole&displayName=Management%20-%20Administrator"
-# echo "Production Administrator         :  https://signin.aws.amazon.com/switchrole?account=${PRODUCTION_ID}&roleName=ProductionAdministratorAccessRole&displayName=Production%20-%20Administrator"
-# echo "Staging Administrator            :  https://signin.aws.amazon.com/switchrole?account=${STAGING_ID}&roleName=StagingAdministratorAccessRole&displayName=Staging%20-%20Administrator"
-# echo "Staging Power User               :  https://signin.aws.amazon.com/switchrole?account=${STAGING_ID}&roleName=StagingPowerUserAccessRole&displayName=Staging%20-%20Power%20User"
+echo "Dev Administrator            :  https://signin.aws.amazon.com/switchrole?account=${DEV_ID}&roleName=DevAdministratorAccessRole&displayName=Dev%20-%20Administrator"
+echo "Dev Power User               :  https://signin.aws.amazon.com/switchrole?account=${DEV_ID}&roleName=DevPowerUserAccessRole&displayName=Dev%20-%20Power%20User"
+echo "Data Administrator            :  https://signin.aws.amazon.com/switchrole?account=${DATA_ID}&roleName=DataAdministratorAccessRole&displayName=Data%20-%20Administrator"
+echo "Data Power User               :  https://signin.aws.amazon.com/switchrole?account=${DATA_ID}&roleName=DataPowerUserAccessRole&displayName=Data%20-%20Power%20User"
 echo "----------------------------------------------------------------"
 echo "Administrator username           : " $ADMIN_USERNAME
 echo "Administrator password           : " $ADMIN_PASSWORD
